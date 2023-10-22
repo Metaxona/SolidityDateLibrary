@@ -1,66 +1,33 @@
-## Foundry
+# Solidity Date Library
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+A Library for converting human readable date and time to a unix timestamp version to be used on-chain
+or to convert timestamp to human readable date and time
 
-Foundry consists of:
+## To Unix Timestamp
 
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+getTimestamp
 
-## Documentation
+## To Human Readable
 
-https://book.getfoundry.sh/
+getYear
+getMonth
+getDay
+getHours
+getMinutes
+getSeconds
+getDate
+getTime
+getDateFull
 
-## Usage
+## Others
 
-### Build
-
-```shell
-$ forge build
-```
-
-### Test
-
-```shell
-$ forge test
-```
-
-### Format
-
-```shell
-$ forge fmt
-```
-
-### Gas Snapshots
-
-```shell
-$ forge snapshot
-```
-
-### Anvil
-
-```shell
-$ anvil
-```
-
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```
+isLeapYear
+isDayOfTheWeek
+getNumberOfLeapYearsSinceEpoch
+getNumberOfNonLeapYearsSinceEpoch
+getNumberOfYearsSinceEpoch
+getNumberOfDaysSinceEpoch
+getNumberOfDaysInAMonth
+getNumberOfDaysPassedInYear
+getDayOfTheWeek
+getNextDayOfTheWeek
