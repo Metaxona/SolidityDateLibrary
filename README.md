@@ -5,29 +5,29 @@ or to convert timestamp to human readable date and time
 
 ## To Unix Timestamp
 
-getTimestamp
+- getTimestamp
 
 ## To Human Readable
 
-getYear
-getMonth
-getDay
-getHours
-getMinutes
-getSeconds
-getDate
-getTime
-getDateFull
+- getYear
+- getMonth
+- getDay
+- getHours
+- getMinutes
+- getSeconds
+- getDate
+- getTime
+- getDateFull
 
 ## Others
 
-isLeapYear
-isDayOfTheWeek
-getNumberOfLeapYearsSinceEpoch
-getNumberOfNonLeapYearsSinceEpoch
-getNumberOfYearsSinceEpoch
-getNumberOfDaysSinceEpoch
-getNumberOfDaysInAMonth
-getNumberOfDaysPassedInYear
-getDayOfTheWeek
-getNextDayOfTheWeek
+- isLeapYear
+- isDayOfTheWeek
+- getNumberOfLeapYearsSinceEpoch
+- getNumberOfNonLeapYearsSinceEpoch
+- getNumberOfYearsSinceEpoch
+- getNumberOfDaysSinceEpoch
+- getNumberOfDaysInAMonth
+- getNumberOfDaysPassedInYear
+- getDayOfTheWeek
+- getNextDayOfTheWeek
