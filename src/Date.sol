@@ -47,6 +47,65 @@ library Date {
     error DayOnThisMonthDoesNotExist();
     error InvalidDayOfTheWeek();
 
+    uint256 constant SECONDS_PER_DAY = 24 * 60 * 60;
+    uint256 constant SECONDS_PER_HOUR = 60 * 60;
+    uint256 constant SECONDS_PER_MINUTE = 60;
+    int256 constant OFFSET19700101 = 2440588;
+
+    uint256 constant DOW_MON = 1;
+    uint256 constant DOW_TUE = 2;
+    uint256 constant DOW_WED = 3;
+    uint256 constant DOW_THU = 4;
+    uint256 constant DOW_FRI = 5;
+    uint256 constant DOW_SAT = 6;
+    uint256 constant DOW_SUN = 7;
+
+    /**
+    * custom:function-name daysFromDate
+    * @dev modified code snippet from RollaProject solidity-datetime
+    * for more info go to the link below 
+    * https://github.com/RollaProject/solidity-datetime/blob/master/contracts/DateTime.sol
+    */
+    function daysFromDate(uint8 month, uint8 day, uint16 year) private pure returns (uint256 _days) {
+        if(year < ORIGIN_YEAR) revert InvalidYear();
+        int256 _year = int256(uint256(year));
+        int256 _month = int256(uint256(month));
+        int256 _day = int256(uint256(day));
+
+        int256 __days = _day - 32075 + (1461 * (_year + 4800 + (_month - 14) / 12)) / 4
+            + (367 * (_month - 2 - ((_month - 14) / 12) * 12)) / 12
+            - (3 * ((_year + 4900 + (_month - 14) / 12) / 100)) / 4 - OFFSET19700101;
+
+        _days = uint256(__days);
+    }
+
+    /**
+    * custom:function-name daysToDate
+    * @dev modified code snippet from RollaProject solidity-datetime
+    * for more info go to the link below 
+    * https://github.com/RollaProject/solidity-datetime/blob/master/contracts/DateTime.sol
+    */
+    function daysToDate(uint256 _days) private pure returns (uint8 month, uint8 day, uint16 year) {
+        unchecked {
+            int256 __days = int256(_days);
+
+            int256 L = __days + 68569 + OFFSET19700101;
+            int256 N = (4 * L) / 146097;
+            L = L - (146097 * N + 3) / 4;
+            int256 _year = (4000 * (L + 1)) / 1461001;
+            L = L - (1461 * _year) / 4 + 31;
+            int256 _month = (80 * L) / 2447;
+            int256 _day = L - (2447 * _month) / 80;
+            L = _month / 11;
+            _month = _month + 2 - 12 * L;
+            _year = 100 * (N - 49) + _year + L;
+
+            month = uint8(uint256(_month));
+            day = uint8(uint256(_day));
+            year = uint16(uint256(_year));
+        }
+    }
+
     /**
      * custom:function-name isLeapYear  
      * @param _year a year between ORIGIN_YEAR and 3000
@@ -68,84 +127,6 @@ library Date {
     }
 
     /**
-     * custom:function-name getNumberOfLeapYearsSinceEpoch  
-     * @param _year a year between ORIGIN_YEAR and 3000
-     * @return years returns a uint256 value representing the number of leap years 
-     * between ORIGIN_YEAR and _year
-     * 
-     * @dev this is a function that counts the number of leap years that has passed 
-     * from ORIGIN_YEAR until the stated year    
-     */
-    function getNumberOfLeapYearsSinceEpoch(uint16 _year) internal pure returns(uint256){
-
-        if(_year < ORIGIN_YEAR) revert InvalidYear();
-        
-        uint256 leapYears;
-
-        uint256 upToEnd = ((uint256(_year) / 4) - (uint256(_year) / 100) + (uint256(_year) / 400)) + 1; 
-
-        uint256 upToStart = 477 + 1;
-        
-        leapYears = (upToEnd - upToStart);
-
-        return leapYears;
-    }
-
-    /**
-     * custom:function-name getNumberOfNonLeapYearsSinceEpoch  
-     * @param _year a year between ORIGIN_YEAR and 3000
-     * @return years returns a uint256 value representing the number of non leap years 
-     * between ORIGIN_YEAR and _year
-     * 
-     * @dev this is a function that counts the number of years that are not leap years 
-     * that has passed from ORIGIN_YEAR until the stated year    
-     */
-    function getNumberOfNonLeapYearsSinceEpoch(uint16 _year) internal pure returns(uint256){
-
-        if(_year < ORIGIN_YEAR) revert InvalidYear();
-        
-        uint256 nonLeapYears;
-
-        nonLeapYears = _year - ORIGIN_YEAR - getNumberOfLeapYearsSinceEpoch(uint16(_year));
-
-        return nonLeapYears;
-    }
-
-    /**
-     * custom:function-name getNumberOfYearsSinceEpoch  
-     * @param _year a year between ORIGIN_YEAR and 3000
-     * @return years returns a uint256 value representing the number of years that 
-     * has passed from ORIGIN_YEAR until the present
-     * 
-     * @dev this is a function that counts the number of years that has passed from 
-     * ORIGIN_YEAR until the stated year    
-     */
-    function getNumberOfYearsSinceEpoch(uint16 _year) internal pure returns(uint256){
-        if(_year < ORIGIN_YEAR) revert InvalidYear();
-
-        return _year - ORIGIN_YEAR;
-    }
-
-    /**
-     * custom:function-name getNumberOfDaysSinceEpoch
-     * @param _month a number representation of month from 1 - 12
-     * @param _day a number representation of day from 1 - 31
-     * @param _year a year between ORIGIN_YEAR and 3000
-     * @return days returns a uint256 value representing the number of days that has 
-     * passed from ORIGIN_YEAR until the set _month, _day, and _year
-     * 
-     * @dev this is a function that counts the number of days that has passed from 
-     * ORIGIN_YEAR until the stated year    
-     */
-    function getNumberOfDaysSinceEpoch(uint8 _month, uint8 _day, uint16 _year) internal pure returns (uint256){
-        if(_month < 1 || _month > 12) revert InvalidMonth();
-        if(_day < 1 || _day > 31) revert InvalidDay();
-        if(_year < ORIGIN_YEAR) revert InvalidYear();
-        
-        return ( (getNumberOfLeapYearsSinceEpoch(uint16(_year)) * 366) + (getNumberOfNonLeapYearsSinceEpoch(uint16(_year)) * 365) + getNumberOfDaysPassedInYear(uint8(_month), uint8(_day), uint16(_year)) );
-    }
-
-    /**
      * custom:function-name getYear
      * @param blockTimestamp the timestamp retrieved from block.timestamp or any timestamp 
      * @return year returns a uint16 value representing the year from a given timestamp
@@ -153,26 +134,13 @@ library Date {
      * @dev this is a function that retrieves the year from a given timestamp    
      */
     function getYear(uint256 blockTimestamp) internal pure returns(uint16) {
-        uint256 secondsInNonLeapYear = 365 * 1 days;
-        uint256 secondsInLeapYear = 366 * 1 days;
+        uint256 _days = uint256(blockTimestamp / SECONDS_PER_DAY);
 
-        uint256 currentTimestamp = blockTimestamp;
+        (,,uint16 year) = daysToDate(_days);
 
-        uint256 yearsSinceORIGIN_YEAR = currentTimestamp / secondsInLeapYear;
-        uint256 leapYears = (yearsSinceORIGIN_YEAR + 1) / 4;
-        uint256 nonLeapYears = yearsSinceORIGIN_YEAR - leapYears;
-        uint256 remainingSeconds = currentTimestamp % secondsInNonLeapYear;
-
-        uint256 currentYear = ORIGIN_YEAR + leapYears + nonLeapYears;
-
-        if(isLeapYear(uint16(currentYear))){
-            if (remainingSeconds >= secondsInLeapYear){
-                ++currentYear;
-            }
-        }
-
-        return uint16(currentYear);
+        return year;
     }
+
 
     /**
      * custom:function-name getMonth
@@ -182,19 +150,14 @@ library Date {
      * @dev this is a function that retrieves the month from a given timestamp    
      */
     function getMonth(uint256 blockTimestamp) internal pure returns(uint8){
-        uint256 secondsInMonth = 1 days * 30.44;
-        uint256 currentTimestamp = blockTimestamp;
 
-        uint256 monthsPassed = (currentTimestamp / secondsInMonth) + 1;
+        uint256 _days = uint256(blockTimestamp / SECONDS_PER_DAY);
 
-        uint256 currentMonth = monthsPassed % 12;
-        
-        if(currentMonth == 0){
-            currentMonth = 12;
-        }
+        (uint8 month,,) = daysToDate(_days);
 
-        return uint8(currentMonth);
+        return month;
     }
+
 
     /**
      * custom:function-name getDay
@@ -204,20 +167,11 @@ library Date {
      * @dev this is a function that retrieves the day from a given timestamp    
      */
     function getDay(uint256 blockTimestamp) internal pure returns(uint8){
-        uint256 secondsInDay = 1 days;
-        uint256 currentTimestamp = blockTimestamp;
+        uint256 _days = uint256(blockTimestamp / SECONDS_PER_DAY);
 
-        uint256 yearsSinceORIGIN_YEAR = currentTimestamp / (1 days * 366);
-        uint256 leapYears = (yearsSinceORIGIN_YEAR + 1) / 4;
-        uint256 nonLeapYears = yearsSinceORIGIN_YEAR - leapYears;
+        (,uint8 day,) = daysToDate(_days);
 
-        uint256 totalDays = (nonLeapYears * 365) + (leapYears * 366);
-
-        uint256 currentday = (currentTimestamp / secondsInDay) - totalDays;
-
-        uint8 currentMonth = getMonth(blockTimestamp); 
-        
-        return uint8((currentday - (getNumberOfDaysPassedInYear(blockTimestamp, uint8(currentMonth)))) + 1) ;
+        return day;
     }
 
     /**
@@ -228,9 +182,8 @@ library Date {
      * @dev this is a function that retrieves the hour from a given timestamp 
      */
     function getHours(uint256 blockTimestamp) internal pure returns(uint8){
-        uint256 secondsInHour = 1 hours;
 
-        uint256 hoursPassed = blockTimestamp / secondsInHour;
+        uint256 hoursPassed = blockTimestamp / SECONDS_PER_HOUR;
 
         return uint8(hoursPassed % 24);
     }
@@ -243,9 +196,8 @@ library Date {
      * @dev this is a function that retrieves the minute from a given timestamp
      */
     function getMinutes(uint256 blockTimestamp) internal pure returns(uint8){
-        uint256 secondsInMinute = 1 minutes;
 
-        uint256 minutesPassed = blockTimestamp / secondsInMinute;
+        uint256 minutesPassed = blockTimestamp / SECONDS_PER_MINUTE;
 
         return uint8(minutesPassed % 60);
     }
@@ -259,7 +211,7 @@ library Date {
      */
     function getSeconds(uint256 blockTimestamp) internal pure returns(uint8){
         
-        return uint8(blockTimestamp % 60);
+        return uint8(blockTimestamp % SECONDS_PER_MINUTE);
     }
 
     /**
@@ -272,9 +224,10 @@ library Date {
      * @dev this is a function that retrieves the month, day, and year from a given timestamp
      */
     function getDate(uint256 blockTimestamp) internal pure returns(uint8 month, uint8 day, uint16 year){
-        month = getMonth(blockTimestamp);
-        day = getDay(blockTimestamp);
-        year = getYear(blockTimestamp);
+        uint256 _days = uint256(blockTimestamp / SECONDS_PER_DAY);
+
+        (month, day, year) = daysToDate(_days);
+
     }
 
     /**
@@ -317,27 +270,37 @@ library Date {
     }
 
     /**
-     * custom:function-name getNumberOfDaysInAMonth
-     * @param blockTimestamp the timestamp retrieved from block.timestamp or any timestamp 
-     * @param _month a number representation of month from 1 - 12
-     * @return days returns a uint256 value representing the number of days in a given month
+     * custom:function-name getNumberOfYearsSinceEpoch  
+     * @param _year a year between ORIGIN_YEAR and 3000
+     * @return years returns a uint256 value representing the number of years that 
+     * has passed from ORIGIN_YEAR until the present
      * 
-     * @dev this is a function that retrieves the number of days in a given month and a given 
-     * timestamp to check if there will be changes die to a leap year
+     * @dev this is a function that counts the number of years that has passed from 
+     * ORIGIN_YEAR until the stated year    
      */
-    function getNumberOfDaysInAMonth(uint256 blockTimestamp, uint8 _month) internal pure returns(uint256){
-       
+    function getNumberOfYearsSinceEpoch(uint16 _year) internal pure returns(uint256){
+        if(_year < ORIGIN_YEAR) revert InvalidYear();
+
+        return _year - ORIGIN_YEAR;
+    }
+
+    /**
+     * custom:function-name getNumberOfDaysSinceEpoch
+     * @param _month a number representation of month from 1 - 12
+     * @param _day a number representation of day from 1 - 31
+     * @param _year a year between ORIGIN_YEAR and 3000
+     * @return days returns a uint256 value representing the number of days that has 
+     * passed from ORIGIN_YEAR until the set _month, _day, and _year
+     * 
+     * @dev this is a function that counts the number of days that has passed from 
+     * ORIGIN_YEAR until the stated year    
+     */
+    function getNumberOfDaysSinceEpoch(uint8 _month, uint8 _day, uint16 _year) internal pure returns (uint256){
         if(_month < 1 || _month > 12) revert InvalidMonth();
-
-        uint8[12] memory daysInAMonthNonLeapYear = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-        uint8[12] memory daysInAMonthLeapYear = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+        if(_day < 1 || _day > 31) revert InvalidDay();
+        if(_year < ORIGIN_YEAR) revert InvalidYear();
         
-        uint256 currentYear = getYear(blockTimestamp);
-        
-        uint8[12] memory daysInAMonth = (isLeapYear(uint16(currentYear))) ? daysInAMonthLeapYear : daysInAMonthNonLeapYear;
-
-
-        return daysInAMonth[uint256(_month - 1)];
+        return daysFromDate(_month, _day, _year);
     }
 
     /**
@@ -355,105 +318,21 @@ library Date {
         if(_month < 1 || _month > 12) revert InvalidMonth();
         if(_year < ORIGIN_YEAR) revert InvalidYear();
 
-         uint8[12] memory daysInAMonthNonLeapYear = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-         uint8[12] memory daysInAMonthLeapYear = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-         uint8[12] memory daysInAMonth = (isLeapYear(_year)) ? daysInAMonthLeapYear : daysInAMonthNonLeapYear;
+        bool isLeap = isLeapYear(_year); 
 
-        return daysInAMonth[uint256(_month - 1)];
+        if(_month == 2 && isLeap){
+            return 29;
+        }
+        else if(_month == 2 && !isLeap){
+            return 28;
+        }
+        else if(_month == 1 || _month == 3 || _month == 5 || _month == 7 || _month == 8 || _month == 10 ||_month == 12){
+            return 31;
+        }
+        else{
+            return 30;
+        }
          
-    }
-
-    /**
-     * custom:function-name getNumberOfDaysPassedInYear
-     * @param blockTimestamp the timestamp retrieved from block.timestamp or any timestamp 
-     * @param _month a number representation of month from 1 - 12
-     * @return days returns a uint256 value representing the number of days passed since the 
-     * start of the year in a given month and a timestamp
-     * 
-     * @dev this is a function that retrieves the number of days that has passed since the start 
-     * of the year from the given timestamp until the given month of the same year
-     */
-    function getNumberOfDaysPassedInYear(uint256 blockTimestamp, uint8 _month) internal pure returns(uint256){
-        if(_month < 1 || _month > 12) revert InvalidMonth();
-        
-        uint8[12] memory daysInAMonthNonLeapYear = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-        uint8[12] memory daysInAMonthLeapYear = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-        
-        uint256 currentYear = getYear(blockTimestamp);
-        
-        uint8[12] memory daysInAMonth = (isLeapYear(uint16(currentYear))) ? daysInAMonthLeapYear : daysInAMonthNonLeapYear;
-
-        uint256 numberOfDays;
-        for(uint256 i = 0; i < uint256(_month - 1) ; i++){
-            numberOfDays += daysInAMonth[i];
-        }
-
-        return numberOfDays;
-    }
-
-    /**
-     * custom:function-name getNumberOfDaysPassedInYear
-     * @param blockTimestamp the timestamp retrieved from block.timestamp or any timestamp 
-     * @param _month a number representation of month from 1 - 12
-     * @param _day a number representation of day from 1 - 31
-     * @return days returns a uint256 value representing the number of days passed since the start 
-     * of the year in a given month, day and a timestamp
-     * 
-     * @dev this is a function that retrieves the number of days that has passed since the start 
-     * of the year from the given timestamp until the given month and day of the same year
-     */
-    function getNumberOfDaysPassedInYear(uint256 blockTimestamp, uint8 _month, uint8 _day) internal pure returns(uint256){
-        if(_month < 1 || _month > 12) revert InvalidMonth();
-        if(_day < 1 || _day > 31) revert InvalidDay();
-
-        uint8[12] memory daysInAMonthNonLeapYear = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-        uint8[12] memory daysInAMonthLeapYear = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-        
-        uint256 currentYear = getYear(blockTimestamp);
-        
-        uint8[12] memory daysInAMonth = (isLeapYear(uint16(currentYear))) ? daysInAMonthLeapYear : daysInAMonthNonLeapYear;
-
-        if(_day > daysInAMonth[uint256(_month - 1)]) revert DayOnThisMonthDoesNotExist();
-
-        uint256 numberOfDays;
-        for(uint256 i = 0; i < uint256(_month - 1) ; i++){
-            numberOfDays += daysInAMonth[i];
-        }
-
-        return numberOfDays + _day - 1;
-    }
-
-    /**
-     * custom:function-name getNumberOfDaysPassedInYear
-     * @param _month a number representation of month from 1 - 12
-     * @param _day a number representation of day from 1 - 31
-     * @param _year a year between ORIGIN_YEAR and 3000
-     * @return days returns a uint256 value representing the number of days passed since the start 
-     * of the year in a given month, day and year
-     * 
-     * @dev this is a function that retrieves the number of days that has passed since the start 
-     * of the year from the given month, day, and year    
-     */
-    function getNumberOfDaysPassedInYear(uint8 _month, uint8 _day, uint16 _year) internal pure returns(uint256){
-        if(_month < 1 || _month > 12) revert InvalidMonth();
-        if(_day < 1 || _day > 31) revert InvalidDay();
-
-        uint8[12] memory daysInAMonthNonLeapYear = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-        uint8[12] memory daysInAMonthLeapYear = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-        
-        uint256 currentYear = _year;
-        
-        uint8[12] memory daysInAMonth = (isLeapYear(uint16(currentYear))) ? daysInAMonthLeapYear : daysInAMonthNonLeapYear;
-
-        if(_day > daysInAMonth[uint256(_month - 1)]) revert DayOnThisMonthDoesNotExist();
-
-        uint256 numberOfDays;
-        
-        for(uint256 i = 0; i < uint256(_month - 1) ; i++){
-            numberOfDays += daysInAMonth[i];
-        }
-
-        return numberOfDays + uint256(_day) - 1;
     }
 
     /**
@@ -470,7 +349,7 @@ library Date {
      * @dev this is a function that converts a given month, day, year, hour, minute, and second 
      * into a timestamp
      */    
-    function getTimestamp(uint8 _month, uint8 _day, uint16 _year, uint8 _hours, uint8 _minutes, uint8 _seconds) internal pure returns(uint256){
+    function getTimestamp(uint8 _month, uint8 _day, uint16 _year, uint8 _hours, uint8 _minutes, uint8 _seconds) internal pure returns(uint256 timestamp){
         if(_month < 1 || _month > 12) revert InvalidMonth();
         if(_day < 1 || _day > 31) revert InvalidDay();
         if(_year < ORIGIN_YEAR) revert InvalidYear();
@@ -478,110 +357,8 @@ library Date {
         if(_minutes < 0 || _minutes > 59 ) revert InvalidMinutes();
         if(_seconds < 0 || _seconds > 59 ) revert InvalidSeconds();
         
-        uint256 leaps = getNumberOfLeapYearsSinceEpoch(_year);
-        uint256 nonleaps = getNumberOfNonLeapYearsSinceEpoch(_year);
-        uint256 daysPassed = getNumberOfDaysPassedInYear(_month, _day, _year);
-
-        uint256 timestamp; 
- 
-        unchecked{
-           timestamp = (nonleaps * 365 days) + (leaps * 366 days) + (daysPassed * 1 days) + (uint256(_hours) * 1 hours) + (uint256(_minutes) * 1 minutes) + (uint256(_seconds));
-        }
+        timestamp = daysFromDate(_month, _day, _year) * SECONDS_PER_DAY + _hours * SECONDS_PER_HOUR + _minutes * SECONDS_PER_MINUTE + _seconds;
     
-        return timestamp;
-    }
-
-    /**
-     * custom:function-name getTimestamp
-     * @param _month a number representation of month from 1 - 12
-     * @param _day a number representation of day from 1 - 31
-     * @param _year a year between ORIGIN_YEAR and 3000
-     * @param _hours a number representation of hour from 1 - 23
-     * @param _minutes a number representation of minute from 1 - 59
-     * @return timestamp returns a uint256 value representing the timestamp equivalent of a 
-     * given month, day, year, hour, and minute
-     * 
-     * @dev this is a function that converts a given month, day, year, hour, and minute 
-     * into a timestamp
-     */    
-    function getTimestamp(uint8 _month, uint8 _day, uint16 _year, uint8 _hours, uint8 _minutes) internal pure returns(uint256){
-        if(_month < 1 || _month > 12) revert InvalidMonth();
-        if(_day < 1 || _day > 31) revert InvalidDay();
-        if(_year < ORIGIN_YEAR) revert InvalidYear();
-        if(_hours < 0 || _hours > 23 ) revert InvalidHours();
-        if(_minutes < 0 || _minutes > 59 ) revert InvalidMinutes();
-        
-        uint256 leaps = getNumberOfLeapYearsSinceEpoch(_year);
-        uint256 nonleaps = getNumberOfNonLeapYearsSinceEpoch(_year);
-        uint256 daysPassed = getNumberOfDaysPassedInYear(_month, _day, _year);
-
-        uint256 timestamp; 
- 
-        unchecked{
-           timestamp = (nonleaps * 365 days) + (leaps * 366 days) + (daysPassed * 1 days) + (uint256(_hours) * 1 hours) + (uint256(_minutes) * 1 minutes) + (uint256(0));
-        }
-    
-        return timestamp;
-    }
-
-    /**
-     * custom:function-name getTimestamp
-     * @param _month a number representation of month from 1 - 12
-     * @param _day a number representation of day from 1 - 31
-     * @param _year a year between ORIGIN_YEAR and 3000
-     * @param _hours a number representation of hour from 1 - 23
-     * @return timestamp returns a uint256 value representing the timestamp equivalent of a 
-     * given month, day, year, and hour
-     * 
-     * @dev this is a function that converts a given month, day, year, and hour 
-     * into a timestamp
-     */    
-    function getTimestamp(uint8 _month, uint8 _day, uint16 _year, uint8 _hours) internal pure returns(uint256){
-        if(_month < 1 || _month > 12) revert InvalidMonth();
-        if(_day < 1 || _day > 31) revert InvalidDay();
-        if(_year < ORIGIN_YEAR) revert InvalidYear();
-        if(_hours < 0 || _hours > 23 ) revert InvalidHours();
-        
-        uint256 leaps = getNumberOfLeapYearsSinceEpoch(_year);
-        uint256 nonleaps = getNumberOfNonLeapYearsSinceEpoch(_year);
-        uint256 daysPassed = getNumberOfDaysPassedInYear(_month, _day, _year);
-
-        uint256 timestamp; 
- 
-        unchecked{
-           timestamp = (nonleaps * 365 days) + (leaps * 366 days) + (daysPassed * 1 days) + (uint256(_hours) * 1 hours) + (uint256(0) * 1 minutes) + (uint256(0));
-        }
-    
-        return timestamp;
-    }
-
-    /**
-     * custom:function-name getTimestamp
-     * @param _month a number representation of month from 1 - 12
-     * @param _day a number representation of day from 1 - 31
-     * @param _year a year between ORIGIN_YEAR and 3000
-     * @return timestamp returns a uint256 value representing the timestamp equivalent of a 
-     * given month, day, and year
-     * 
-     * @dev this is a function that converts a given month, day, and year
-     * into a timestamp
-     */    
-    function getTimestamp(uint8 _month, uint8 _day, uint16 _year) internal pure returns(uint256){
-        if(_month < 1 || _month > 12) revert InvalidMonth();
-        if(_day < 1 || _day > 31) revert InvalidDay();
-        if(_year < ORIGIN_YEAR) revert InvalidYear();
-        
-        uint256 leaps = getNumberOfLeapYearsSinceEpoch(_year);
-        uint256 nonleaps = getNumberOfNonLeapYearsSinceEpoch(_year);
-        uint256 daysPassed = getNumberOfDaysPassedInYear(_month, _day, _year);
-
-        uint256 timestamp; 
- 
-        unchecked{
-           timestamp = (nonleaps * 365 days) + (leaps * 366 days) + (daysPassed * 1 days) + (uint256(0) * 1 hours) + (uint256(0) * 1 minutes) + (uint256(0));
-        }
-    
-        return timestamp;
     }
 
     /**
